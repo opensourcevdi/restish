@@ -360,9 +360,10 @@ func openapiOperation(cmd *cobra.Command, method string, uriTemplate *url.URL, p
 					if m, ok := ex.(map[string]interface{}); ok {
 						exs := shorthand.MarshalCLI(m)
 
-						if len(exs) < 150 {
+						{
 							examples = append(examples, exs)
-						} else {
+						}
+						{
 							found := false
 							for _, e := range examples {
 								if e == "<input.json" {
