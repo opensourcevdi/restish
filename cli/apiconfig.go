@@ -246,6 +246,12 @@ func initAPIConfig() {
 		panic(err)
 	}
 
+	if customUrl := viper.GetString("api-url"); customUrl != "" {
+		configs["API_URL"] = &APIConfig{
+			Base: customUrl,
+		}
+	}
+
 	seen := map[string]bool{}
 	for apiName, config := range configs {
 		func(config *APIConfig) {
