@@ -25,6 +25,7 @@ type Operation struct {
 	PathParams    []*Param `json:"path_params,omitempty" yaml:"path_params,omitempty"`
 	QueryParams   []*Param `json:"query_params,omitempty" yaml:"query_params,omitempty"`
 	HeaderParams  []*Param `json:"header_params,omitempty" yaml:"header_params,omitempty"`
+	BodyParams    []*Param `json:"body_params,omitempty" yaml:"body_params,omitempty"`
 	BodyMediaType string   `json:"body_media_type,omitempty" yaml:"body_media_type,omitempty"`
 	Examples      []string `json:"examples,omitempty" yaml:"examples,omitempty"`
 	Hidden        bool     `json:"hidden,omitempty" yaml:"hidden,omitempty"`
@@ -127,10 +128,22 @@ func (o Operation) command() *cobra.Command {
 				}
 			}
 
+			body2 := make(map[string]any)
+			for _, param := range o.BodyParams {
+				if !cmd.Flags().Changed(param.OptionName()) {
+					// This option was not passed from the shell, so there is no need to
+					// send it, even if it is the default or zero value.
+					continue
+				}
+
+				flag := flags[param.Name]
+				body2[param.Name] = flag
+			}
+
 			var body io.Reader
 
 			if o.BodyMediaType != "" {
-				b, err := GetBody(o.BodyMediaType, args[len(o.PathParams):])
+				b, err := GetBodyExtraProps(o.BodyMediaType, args[len(o.PathParams):], body2)
 				if err != nil {
 					panic(err)
 				}
@@ -148,6 +161,10 @@ func (o Operation) command() *cobra.Command {
 	}
 
 	for _, p := range o.HeaderParams {
+		flags[p.Name] = p.AddFlag(sub.Flags())
+	}
+
+	for _, p := range o.BodyParams {
 		flags[p.Name] = p.AddFlag(sub.Flags())
 	}
 

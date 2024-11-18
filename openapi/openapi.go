@@ -212,8 +212,8 @@ func paramSchema(p *cli.Param, s *base.Schema) string {
 }
 
 func openapiOperation(cmd *cobra.Command, method string, uriTemplate *url.URL, path *v3.PathItem, op *v3.Operation) cli.Operation {
-	var pathParams, queryParams, headerParams []*cli.Param
-	var pathSchemas, querySchemas, headerSchemas []*base.Schema = []*base.Schema{}, []*base.Schema{}, []*base.Schema{}
+	var pathParams, queryParams, headerParams, bodyParams []*cli.Param
+	var pathSchemas, querySchemas, headerSchemas, bodySchemas []*base.Schema = []*base.Schema{}, []*base.Schema{}, []*base.Schema{}, []*base.Schema{}
 
 	// Combine path and operation parameters, with operation params having
 	// precedence when there are name conflicts.
@@ -226,6 +226,15 @@ func openapiOperation(cmd *cobra.Command, method string, uriTemplate *url.URL, p
 	for _, p := range path.Parameters {
 		if !seen[p.Name] {
 			combinedParams = append(combinedParams, p)
+		}
+	}
+	if _, reqSchema, _ := getRequestInfo(op); reqSchema != nil {
+		for name, property := range reqSchema.Properties {
+			combinedParams = append(combinedParams, &v3.Parameter{
+				In:     "body",
+				Name:   name,
+				Schema: property,
+			})
 		}
 	}
 
@@ -305,6 +314,12 @@ func openapiOperation(cmd *cobra.Command, method string, uriTemplate *url.URL, p
 			}
 			headerParams = append(headerParams, param)
 			headerSchemas = append(headerSchemas, schema)
+		case "body":
+			if bodyParams == nil {
+				bodyParams = []*cli.Param{}
+			}
+			bodyParams = append(bodyParams, param)
+			bodySchemas = append(bodySchemas, schema)
 		}
 	}
 
@@ -334,13 +349,16 @@ func openapiOperation(cmd *cobra.Command, method string, uriTemplate *url.URL, p
 		desc += "}\n```\n"
 	}
 
-	if len(queryParams) > 0 || len(headerParams) > 0 {
+	if len(queryParams) > 0 || len(headerParams) > 0 || len(bodyParams) > 0 {
 		desc += "\n## Option Schema:\n```schema\n{\n"
 		for i, p := range queryParams {
 			desc += "  --" + p.OptionName() + ": " + paramSchema(p, querySchemas[i]) + "\n"
 		}
 		for i, p := range headerParams {
 			desc += "  --" + p.OptionName() + ": " + paramSchema(p, headerSchemas[i]) + "\n"
+		}
+		for i, p := range bodyParams {
+			desc += "  --" + p.OptionName() + ": " + paramSchema(p, bodySchemas[i]) + "\n"
 		}
 		desc += "}\n```\n"
 	}
@@ -546,6 +564,7 @@ func openapiOperation(cmd *cobra.Command, method string, uriTemplate *url.URL, p
 		PathParams:    pathParams,
 		QueryParams:   queryParams,
 		HeaderParams:  headerParams,
+		BodyParams:    bodyParams,
 		BodyMediaType: mediaType,
 		Examples:      examples,
 		Hidden:        hidden,

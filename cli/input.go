@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"maps"
 	"os"
 	"strings"
 
@@ -21,6 +22,10 @@ var Stdin interface {
 // GetBody returns the request body if one was passed either as shorthand
 // arguments or via stdin.
 func GetBody(mediaType string, args []string) (string, error) {
+	return GetBodyExtraProps(mediaType, args, nil)
+}
+
+func GetBodyExtraProps(mediaType string, args []string, extraProps map[string]any) (string, error) {
 	var body string
 
 	if info, err := Stdin.Stat(); err == nil {
@@ -42,6 +47,12 @@ func GetBody(mediaType string, args []string) (string, error) {
 	})
 	if err != nil {
 		return "", err
+	}
+
+	if input == nil && extraProps != nil {
+		input = extraProps
+	} else if inputMap, ok := input.(map[string]any); ok {
+		maps.Copy(inputMap, extraProps)
 	}
 
 	if input != nil {
