@@ -99,7 +99,7 @@ func cacheAPI(name string, api *API) {
 	if err != nil {
 		LogError("Could not marshal API cache %s", err)
 	}
-	filename := filepath.Join(getCacheDir(), name+".cbor")
+	filename := filepath.Join(getCacheDir(), strings.ReplaceAll(name, "/", "\\")+".cbor")
 	if err := os.WriteFile(filename, b, 0o600); err != nil {
 		LogError("Could not write API cache %s", err)
 	}
@@ -131,7 +131,7 @@ func Load(entrypoint string, root *cobra.Command) (API, error) {
 	expires := Cache.GetTime(name + ".expires")
 	if !viper.GetBool("rsh-no-cache") && !expires.IsZero() && expires.After(time.Now()) {
 		var cached API
-		filename := filepath.Join(getCacheDir(), name+".cbor")
+		filename := filepath.Join(getCacheDir(), strings.ReplaceAll(name, "/", "\\")+".cbor")
 		if data, err := os.ReadFile(filename); err == nil {
 			if err := cbor.Unmarshal(data, &cached); err == nil {
 				if cached.RestishVersion == root.Version {

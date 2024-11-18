@@ -788,6 +788,22 @@ func Run() (returnErr error) {
 	if len(args) > 1 {
 		apiName := args[1]
 
+		if customUrl, found := strings.CutPrefix(apiName, "openapi:"); found {
+			configs[apiName] = &APIConfig{
+				name: apiName,
+				Base: customUrl,
+			}
+			cmd := &cobra.Command{
+				GroupID: "api",
+				Use:     apiName,
+				Short:   customUrl,
+				Run: func(cmd *cobra.Command, args []string) {
+					cmd.Help()
+				},
+			}
+			Root.AddCommand(cmd)
+		}
+
 		if apiName == "help" && len(args) > 2 {
 			// The explicit `help` command is followed by the actual commands
 			// you want help with. The first one is the API name.
