@@ -5,14 +5,11 @@ before:
     - go mod download
 builds:
   - env:
-      - CGO_ENABLED=0
+      - CGO_ENABLED=1
     goos:
       - linux
-      - darwin
-      - windows
-    ignore:
-      - goos: darwin
-        goarch: "386"
+    goarch:
+      - amd64
 archives:
   - name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
     format_overrides:
