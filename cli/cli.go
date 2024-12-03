@@ -788,7 +788,7 @@ func Run() (returnErr error) {
 	if len(args) > 1 {
 		apiName := args[1]
 
-		if customUrl, found := strings.CutPrefix(apiName, "openapi:"); found {
+		if customUrl, found := strings.CutPrefix(apiName, "openapi+"); found {
 			configs[apiName] = &APIConfig{
 				name: apiName,
 				Base: customUrl,
